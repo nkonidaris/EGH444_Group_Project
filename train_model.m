@@ -87,7 +87,7 @@ augimdsValidation = augmentedImageDatastore(inputSize(1:2),imdsValidation);
 %% Train model
 
 miniBatchSize  = 10;
-validationFrequency = floor(numel(y_train)/miniBatchSize);
+validationFrequency = floor(numel(imdsTrain.Labels)/miniBatchSize);
 
 options = trainingOptions('adam', ...
     'miniBatchSize',10, ...
@@ -115,7 +115,9 @@ imdsTesting = imageDatastore('Training_Data\All\', ...
     'IncludeSubfolders',true, ...
     'LabelSource','foldernames');
 
-[YPred,scores] = classify(netTransfer,imdsTesting);
+augimdsTesting = augmentedImageDatastore(inputSize(1:2),imdsTesting);
+
+[YPred,scores] = classify(netTransfer,augimdsTesting);
 
 idx = randperm(numel(imdsTesting.Files),9);
 figure
@@ -131,6 +133,7 @@ YTesting = imdsTesting.Labels;
 accuracy = mean(YPred == YTesting);
 fprintf("Final validation accruacy of model: %f %%\n",accuracy*100);
 
+figure
 confusionchart(YPred, YTesting);
 
 %% .............................NOT USED.................................
