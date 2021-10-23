@@ -13,7 +13,7 @@ imds = imageDatastore('Training_Data\Level 1\', ...
     'IncludeSubfolders',true, ...
     'LabelSource','foldernames');
 
-imageDatastore.ReadFcn = @customReadDatastoreImage;
+imds.ReadFcn = @customReadDatastoreImage;
 
 %% Manual image resizing on image reading
 
@@ -86,41 +86,58 @@ augimdsValidation = augmentedImageDatastore(inputSize(1:2),imdsValidation);
 
 %% Train model
 
+miniBatchSize  = 10;
+validationFrequency = floor(numel(y_train)/miniBatchSize);
+
 options = trainingOptions('adam', ...
-    'MiniBatchSize',10, ...
-    'MaxEpochs',30, ...
+    'miniBatchSize',10, ...
+    'MaxEpochs',15, ...
     'InitialLearnRate',1e-4, ...
+    'LearnRateSchedule','piecewise', ...
     'Shuffle','every-epoch', ...
     'ValidationData',augimdsValidation, ...
-    'ValidationFrequency',3, ...
+    'ValidationFrequency',validationFrequency, ...
     'Verbose',false, ...
     'Plots','training-progress',...
     'ExecutionEnvironment', 'parallel');
 
 netTransfer = trainNetwork(augimdsTrain,lgraph,options);
 
-%% Save model for 
+%% Save model for CNN
 
-save netTransfer
+save netTransfer;
+%% Load model of CNN
 
-%%
+load netTransfer.mat;
+%% Training Accuracy
 
-[YPred,scores] = classify(netTransfer,augimdsValidation);
+imdsTesting = imageDatastore('Training_Data\All\', ...
+    'IncludeSubfolders',true, ...
+    'LabelSource','foldernames');
 
-idx = randperm(numel(imdsValidation.Files),4);
+[YPred,scores] = classify(netTransfer,imdsTesting);
+
+idx = randperm(numel(imdsTesting.Files),9);
 figure
-for i = 1:4
-    subplot(2,2,i)
-    I = readimage(imdsValidation,idx(i));
+for i = 1:9
+    subplot(3,3,i)
+    I = readimage(imdsTesting,idx(i));
     imshow(I)
     label = YPred(idx(i));
     title(string(label));
 end
 
-YValidation = imdsValidation.Labels;
-accuracy = mean(YPred == YValidation)
+YTesting = imdsTesting.Labels;
+accuracy = mean(YPred == YTesting);
+fprintf("Final validation accruacy of model: %f %%\n",accuracy*100);
 
-%%
+confusionchart(YPred, YTesting);
+
+%% .............................NOT USED.................................
+
+
+
+
 newClassLayer = classificationLayer('Name','new_classoutput');
 lgraph = replaceLayer(lgraph,classLayer.Name,newClassLayer);
 
