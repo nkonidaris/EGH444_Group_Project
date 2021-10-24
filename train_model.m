@@ -142,6 +142,10 @@ if exist('netTransfer', 'var') == 0
     load('netTransfer.mat','netTransfer', 'inputSize');
 end
 
+if exist('netTransfer', 'var') == 0
+    load('netTransfer_Best_Yet.mat','netTransfer', 'inputSize');
+end
+
 %% Training Accuracy
 
 YPred = classify(netTransfer, augimdsTrain);
@@ -154,14 +158,14 @@ for i = 1:9
     I = readimage(imdsTrain,idx(i));
     imshow(I)
     label = YPred(idx(i));
-    title(string(label));
+    title(string(label), 'FontSize', 24);
 end
 
 YTrain = imdsTrain.Labels;
 TrainError = mean(YPred == YTrain);
 fprintf("Training accruacy of model: %f %%\n",TrainError*100);
-t = sprintf('Training accuracy: %f %%\n', TrainError*100);
-sgtitle(t);
+t = sprintf('Training accuracy: %f %%', TrainError*100);
+sgtitle(t, 'FontSize', 30);
 
 figure
 cmtrain = confusionchart(YPred, YTrain);
@@ -181,14 +185,14 @@ for i = 1:9
     I = readimage(imdsValidation,idx(i));
     imshow(I)
     label = YPred(idx(i));
-    title(string(label));
+    title(string(label), 'FontSize', 24);
 end
 
 YValidation = imdsValidation.Labels;
 ValError = mean(YPred == YValidation);
 fprintf("Validation accruacy of model: %f %%\n",ValError*100);
-t = sprintf('Validation accuracy: %f %%\n', ValError*100);
-sgtitle(t);
+t = sprintf('Validation accuracy: %f %%', ValError*100);
+sgtitle(t, 'FontSize', 30);
 
 figure
 cmVal = confusionchart(YPred, YValidation);
@@ -214,14 +218,14 @@ for i = 1:9
     I = readimage(imdsTesting,idx(i));
     imshow(I)
     label = YPred(idx(i));
-    title(string(label));
+    title(string(label), 'FontSize', 24);
 end
 
 YTesting = imdsTesting.Labels;
 testError = mean(YPred == YTesting);
 fprintf("Testing accruacy of model: %f %%\n",testError*100);
-t = sprintf('Testing accuracy: %f %%\n', testError*100);
-sgtitle(t);
+t = sprintf('Testing accuracy: %f %%', testError*100);
+sgtitle(t, 'FontSize', 30);
 
 figure
 cmTest = confusionchart(YPred, YTesting);
