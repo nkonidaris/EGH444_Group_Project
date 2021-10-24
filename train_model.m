@@ -32,9 +32,9 @@ imds.ReadFcn = @customReadDatastoreImage;
 % s = size(I_new);
 % fprintf("Size of new images: %d by %d\n",s(1),s(2));
 
-%% 70/30 split for training / validation, ramdonized
+%% 64/20/16 split for Training / Validation / Testing, ramdonized
 
-[imdsTrain,imdsValidation] = splitEachLabel(imds,0.7,'randomized');
+[imdsTrain,imdsValidation] = splitEachLabel(imds,0.8,'randomized');
 [imdsTrain,imdsTesting] = splitEachLabel(imdsTrain,0.8,'randomized');
 
 %% Reworking model
@@ -58,14 +58,15 @@ lgraph = replaceLayer(lgraph,'loss3-classifier',newLearnableLayer);
 
 % Leave softmax layer for classification output
 
-% Replace classifcation layer for new outputs
+% Replace classification layer for new outputs
 newClassLayer = classificationLayer('Name','Classification Bridge');
 lgraph = replaceLayer(lgraph,'output',newClassLayer);
 
-%% Visulise Network
+%% Visualise Network
 
 %deepNetworkDesigner(net);
 %plot(lgraph);
+%disp(net.Layers)
 
 
 %% Image Augmentation, increase image dataset
@@ -88,7 +89,23 @@ augimdsTesting = augmentedImageDatastore(inputSize(1:2),imdsTesting);
 
 %% Train model
 
-miniBatchSize  = 10;
+% miniBatchSize = 10
+% Training accuracy of model: 97.560976 %
+% Validation accuracy of model: 87.272727 %
+% Testing accuracy of model: 86.274510 %
+
+% miniBatchSize = 20
+% Training accuracy of model: 97.446809 %
+% Validation accuracy of model: 90.410959 %
+% Testing accuracy of model: 87.931034 %
+
+% miniBatchSize = 20, All data
+% Training accuracy of model: 92.150171 %
+% Validation accuracy of model: 93.150685 %
+
+% Note: miniBatchSize = 30 performed poorly
+
+miniBatchSize  = 20;
 validationFrequency = floor(numel(imdsTrain.Labels)/miniBatchSize);
 
 options = trainingOptions('adam', ...
@@ -108,21 +125,78 @@ netTransfer = trainNetwork(augimdsTrain,lgraph,options);
 
 %% Save model for CNN
 
-save('netTransfer', 'netTransfer', 'inputSize');
+save('netTransfer_Full_Dataset', 'netTransfer', 'inputSize');
+%save('netTransfer', 'netTransfer', 'inputSize');
 %% Load model of CNN
 
 if exist('netTransfer', 'var') == 0
     load('netTransfer.mat','netTransfer', 'inputSize');
 end
+
+%% Training Accuracy
+
+YPred = classify(netTransfer, augimdsTrain);
+
+idx = randperm(numel(imdsTrain.Files),9);
+figure
+
+for i = 1:9
+    subplot(3,3,i)
+    I = readimage(imdsTrain,idx(i));
+    imshow(I)
+    label = YPred(idx(i));
+    title(string(label));
+end
+
+YTrain = imdsTrain.Labels;
+TrainError = mean(YPred == YTrain);
+fprintf("Training accruacy of model: %f %%\n",TrainError*100);
+t = sprintf('Training accuracy: %f %%\n', TrainError*100);
+sgtitle(t);
+
+figure
+cmtrain = confusionchart(YPred, YTrain);
+cmtrain.Title = 'Confusion Matrix for Training Data';
+cmtrain.ColumnSummary = 'column-normalized';
+cmtrain.RowSummary = 'row-normalized';
+
+%% Validation Accuracy
+
+YPred = classify(netTransfer,augimdsValidation);
+
+idx = randperm(numel(imdsValidation.Files),9);
+figure
+
+for i = 1:9
+    subplot(3,3,i)
+    I = readimage(imdsValidation,idx(i));
+    imshow(I)
+    label = YPred(idx(i));
+    title(string(label));
+end
+
+YValidation = imdsValidation.Labels;
+ValError = mean(YPred == YValidation);
+fprintf("Validation accruacy of model: %f %%\n",ValError*100);
+t = sprintf('Validation accuracy: %f %%\n', ValError*100);
+sgtitle(t);
+
+figure
+cmVal = confusionchart(YPred, YValidation);
+cmVal.Title = 'Confusion Matrix for Validation Data';
+cmVal.ColumnSummary = 'column-normalized';
+cmVal.RowSummary = 'row-normalized';
+
 %% Testing Accuracy
 
+% External Testing datastore
 %  imdsTesting = imageDatastore('Testing_Data\', ...
 %      'IncludeSubfolders',true, ...
 %      'LabelSource','foldernames');
 
 %augimdsTesting = augmentedImageDatastore(inputSize(1:2),imdsTesting);
 
-[YPred,scores] = classify(netTransfer,augimdsTesting);
+YPred = classify(netTransfer,augimdsTesting);
 
 idx = randperm(numel(imdsTesting.Files),9);
 figure
@@ -135,11 +209,16 @@ for i = 1:9
 end
 
 YTesting = imdsTesting.Labels;
-accuracy = mean(YPred == YTesting);
-fprintf("Final validation accruacy of model: %f %%\n",accuracy*100);
+testError = mean(YPred == YTesting);
+fprintf("Testing accruacy of model: %f %%\n",testError*100);
+t = sprintf('Testing accuracy: %f %%\n', testError*100);
+sgtitle(t);
 
 figure
-confusionchart(YPred, YTesting);
+cmTest = confusionchart(YPred, YTesting);
+cmTest.Title = 'Confusion Matrix for Testing Data';
+cmTest.ColumnSummary = 'column-normalized';
+cmTest.RowSummary = 'row-normalized';
 
 %% Testing detect_landmark function
 
