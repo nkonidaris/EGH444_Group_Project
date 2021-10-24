@@ -76,7 +76,7 @@ imageAugmenter = imageDataAugmenter( ...
     'RandXReflection',true, ...
     'RandYReflection',true, ...
     'RandRotation', [-60 60], ...
-    'RandScale', [1 2], ...
+    'RandScale', [0.5 2], ...
     'RandXTranslation',pixelRange, ...
     'RandYTranslation',pixelRange);
 
@@ -89,19 +89,28 @@ augimdsTesting = augmentedImageDatastore(inputSize(1:2),imdsTesting);
 
 %% Train model
 
+% Unsaved
 % miniBatchSize = 10
 % Training accuracy of model: 97.560976 %
 % Validation accuracy of model: 87.272727 %
 % Testing accuracy of model: 86.274510 %
 
+% Best Yet
 % miniBatchSize = 20
 % Training accuracy of model: 97.446809 %
 % Validation accuracy of model: 90.410959 %
 % Testing accuracy of model: 87.931034 %
 
+% Full Dataset
 % miniBatchSize = 20, All data
 % Training accuracy of model: 92.150171 %
 % Validation accuracy of model: 93.150685 %
+
+% Current
+% miniBatchSize = 20
+% Training accruacy of model: 97.021277 %
+% Validation accruacy of model: 87.671233 %
+% Testing accruacy of model: 82.758621 %
 
 % Note: miniBatchSize = 30 performed poorly
 
@@ -110,7 +119,7 @@ validationFrequency = floor(numel(imdsTrain.Labels)/miniBatchSize);
 
 options = trainingOptions('adam', ...
     'miniBatchSize',miniBatchSize, ...
-    'MaxEpochs',20, ...
+    'MaxEpochs',25, ...
     'InitialLearnRate',1e-4, ...
     'LearnRateSchedule','piecewise', ...
     'Shuffle','every-epoch', ...
