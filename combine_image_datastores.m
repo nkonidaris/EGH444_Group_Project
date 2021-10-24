@@ -1,3 +1,6 @@
+% Combine img datastores 
+%   * script needs commenting and cleaning to pair with 
+%% 
 unzip('C:/Users/Tom/Documents/MATLAB/EGH444/ASSESSMENT/OG/Level 11.zip')
 unzip('C:/Users/Tom/Documents/MATLAB/EGH444/ASSESSMENT/OG/Level 2.zip')
 unzip('C:/Users/Tom/Documents/MATLAB/EGH444/ASSESSMENT/OG/Level 3.zip')
