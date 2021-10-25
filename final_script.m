@@ -1,8 +1,65 @@
+%% 
 % EGH444 - Group Project 
 % by Nicholas Konidaris & Thomas Cotter
 
 % Clear all
-clear all; close all, clc
+% clear all; close all, clc
+
+%%
+
+% Combine img datastores 
+%   * script needs commenting and cleaning to pair with 
+% unzip('C:/Users/Tom/Documents/MATLAB/EGH444/ASSESSMENT/OG/Level 11.zip')
+% unzip('C:/Users/Tom/Documents/MATLAB/EGH444/ASSESSMENT/OG/Level 2.zip')
+% unzip('C:/Users/Tom/Documents/MATLAB/EGH444/ASSESSMENT/OG/Level 3.zip')
+
+imds1 = imageDatastore('Training_Data/Level 1', ...
+    'IncludeSubfolders', true, ...,
+    'LabelSource', 'foldernames');
+
+[imds1, imdsTest1] = splitEachLabel(imds1, 0.9, 'randomized'); 
+[imdsTrain1, imdsValidation1] = splitEachLabel(imds1, 0.7, 'randomized');
+
+imds2 = imageDatastore('Training_Data/Level 2', ...
+    'IncludeSubfolders', true, ...,
+    'LabelSource', 'foldernames');
+
+[imds2, imdsTest2] = splitEachLabel(imds2, 0.9, 'randomized'); 
+[imdsTrain2, imdsValidation2] = splitEachLabel(imds2, 0.7, 'randomized');
+
+imds3 = imageDatastore('Training_Data/Level 3', ...
+    'IncludeSubfolders', true, ...,
+    'LabelSource', 'foldernames');
+
+[imds3, imdsTest3] = splitEachLabel(imds3, 0.9, 'randomized'); 
+[imds3, imdsValidation3] = splitEachLabel(imds3, 0.7, 'randomized');
+
+% imds4 = imageDatastore('OTHER', ...
+%     'IncludeSubfolders', true, ...,
+%     'LabelSource', 'foldernames');
+% 
+imds4 = imageDatastore('Training_Data/New', ...
+    'IncludeSubfolders', true, ...,
+    'LabelSource', 'foldernames');
+
+[imds4, imdsTest4] = splitEachLabel(imds4, 0.85, 'randomized'); 
+[imds4, imdsValidation4] = splitEachLabel(imds4, 0.8, 'randomized');
+
+imdsTrain = imageDatastore(cat(1, imds1.Files, imds2.Files, imds3.Files, imds4.Files));
+imdsTrain.Labels = cat(1, imds1.Labels, imds2.Labels, imds3.Labels, imds4.Labels); 
+
+imdsValidation = imageDatastore(cat(1, imdsValidation1.Files, imdsValidation2.Files, imdsValidation3.Files, ...
+    imdsValidation4.Files));
+imdsValidation.Labels = cat(1, imdsValidation1.Labels, imdsValidation2.Labels, imdsValidation3.Labels, ...
+    imdsValidation4.Labels); 
+
+imdsTest = imageDatastore(cat(1, imdsTest1.Files, imdsTest2.Files, imdsTest3.Files, imdsTest4.Files));
+imdsTest.Labels = cat(1, imdsTest1.Labels, imdsTest2.Labels, imdsTest3.Labels, imdsTest4.Labels); 
+
+imdsTrain.ReadFcn = @customReadDatastoreImage;
+imdsValidation.ReadFcn = @customReadDatastoreImage;
+imdsTest.ReadFcn = @customReadDatastoreImage;
+
 %% Importing
 
 % Load pretrained: GoogLeNet
@@ -90,8 +147,8 @@ miniBatchSize  = 10;
 validationFrequency = floor(numel(imdsTrain.Labels)/miniBatchSize);
 
 options = trainingOptions('adam', ...
-    'miniBatchSize',5, ...
-    'MaxEpochs',10, ...
+    'miniBatchSize',15, ...
+    'MaxEpochs',50, ...
     'InitialLearnRate',1e-4, ...
     'LearnRateSchedule','piecewise', ...
     'Shuffle','every-epoch', ...
@@ -101,7 +158,7 @@ options = trainingOptions('adam', ...
     'Plots','training-progress');
 %     'ExecutionEnvironment', 'parallel');
 
-netTransfer2 = trainNetwork(augimdsTrain,lgraph,options);
+netTransfer7 = trainNetwork(augimdsTrain,lgraph,options);
 
 %% Save model for CNN
 
@@ -141,133 +198,38 @@ confusionchart(YPred, YTesting);
 
 
 
-newClassLayer = classificationLayer('Name','new_classoutput');
-lgraph = replaceLayer(lgraph,classLayer.Name,newClassLayer);
-
-% figure('Units','normalized','Position',[0.3 0.3 0.4 0.4]);
-% plot(lgraph)
-% ylim([0,10])
-
-layers = lgraph.Layers;
-connections = lgraph.Connections;
-
-layers(1:10) = freezeWeights(layers(1:10));
-lgraph = createLgraphUsingConnections(layers,connections);
-
-pixelRange = [-30 30];
-scaleRange = [0.9 1.1];
-
-imageAugmenter = imageDataAugmenter( ...
-    'RandXReflection',true, ...
-    'RandXTranslation',pixelRange, ...
-    'RandYTranslation',pixelRange, ...
-    'RandXScale',scaleRange, ...
-    'RandYScale',scaleRange);
-
-augimdsTrain = augmentedImageDatastore(inputSize(1:2),imdsTrain, ...
-    'DataAugmentation',imageAugmenter);
-
-augimdsValidation = augmentedImageDatastore(inputSize(1:2),imdsValidation);
-
-miniBatchSize = 10;
-valFrequency = floor(numel(augimdsTrain.Files)/miniBatchSize);
-
-options = trainingOptions('adam', ...
-    'GradientDecayFactor', 0.9, ...
-    'SquaredGradientDecayFactor', 0.99, ...
-    'verbose', 1, ...
-    'MiniBatchSize',10, ...
-    'MaxEpochs',100, ...
-    'InitialLearnRate',3e-4, ...
-    'Shuffle','every-epoch', ...
-    'ValidationData',augimdsValidation, ...
-    'ValidationFrequency',8, ...
-    'Verbose',false, ...
-    'Plots','training-progress');
-
-% options = trainingOptions('sgdm', ...
-%     'MiniBatchSize',miniBatchSize, ...
-%     'MaxEpochs',50, ...
-%     'InitialLearnRate',1e-3, ...
-%     'Shuffle','every-epoch', ...
-%     'ValidationData',augimdsValidation, ...
-%     'ValidationFrequency',10, ...
-%     'Verbose',false, ...
-%     'Plots','training-progress');
-
-
-neuralnet6 = trainNetwork(augimdsTrain, lgraph, options);
 
 %%
+% Test: Test datasets 
 
-[YPred,probs] = classify(neuralnet5,augimdsValidation);
-accuracy = mean(YPred == imdsValidation.Labels)
+imdsHardValidation = imageDatastore('Training_Data/hard_classification', ...
+    'IncludeSubfolders', true, ...,
+    'LabelSource', 'foldernames');
 
-idx = randperm(numel(imdsValidation.Files), 49);
-figure
-for i = 1:49
-    subplot(7,7,i)
-    I = readimage(imdsValidation,idx(i));
-    imshow(I)
-    label = YPred(idx(i));
-    title(string(label) + ", " + num2str(100*max(probs(idx(i),:)),3) + "%");
-end
+imdsHardValidation2 =  augmentedImageDatastore(inputSize(1:2),imdsHardValidation);
+% augimdsTest = augmentedImageDatastore(inputSize(1:2),imdsHardValidation);
+[YPred,probs] = classify(netTransfer6, imdsHardValidation2);
+accuracy_hard = mean(YPred == imdsHardValidation.Labels)
 
+confusionchart(YPred, imdsHardValidation.Labels)
 
-%%
+%% 
 
+netTransferTest = netTransfer7;
 
-layersTransfer = net.Layers(1:end-3);
+augimdsTest =  augmentedImageDatastore(inputSize(1:2),imdsTest);
+[YPred,probs] = classify(netTransferTest, augimdsTest);
+accuracy_test = mean(YPred == imdsTest.Labels)
 
-numClasses = numel(categories(imdsTrain.Labels));
+confusionchart(YPred, imdsTest.Labels)
+% horzcat(YPred, imdsTest.Labels)
 
-layers = [
-    layersTransfer
-    fullyConnectedLayer(numClasses,'WeightLearnRateFactor',2,'BiasLearnRateFactor',2)
-    softmaxLayer
-    classificationLayer
-    ];
-
-pixelRange = [-35 35];
-imageAugmenter = imageDataAugmenter( ...
-    'RandXReflection',true, ...
-    'RandXTranslation',pixelRange, ...
-    'RandYTranslation',pixelRange);
-augimdsTrain = augmentedImageDatastore(inputSize(1:2),imdsTrain, ...
-    'DataAugmentation',imageAugmenter, ...
-    'ColorPreprocessing', 'gray2rgb');
-
-augimdsValidation = augmentedImageDatastore(inputSize(1:2),imdsValidation, 'ColorPreprocessing', 'gray2rgb');
-
+% Changed minibatches to 10 from 5 then to 7
+% -> learning rate to 5e5 
+% changing learning rate (halved) slowed learning too much and results were
+% sporadic: stopped early (netTransfer4) or 5 
 
 %%
-% options = trainingOptions('sgdm', ...
-%     'Momentum', 0.85, ...
-%     'LearningRateDropFactor', 0.2, ...
-%     'LearningRateDropPeriod', 2, ...
-%     'MiniBatchSize',10, ...
-%     'MaxEpochs',25, ...
-%     'InitialLearnRate',1e-4, ...
-%     'Shuffle','every-epoch', ...
-%     'ValidationData',augimdsValidation, ...
-%     'ValidationFrequency',3, ...
-%     'Verbose',false, ...
-%     'Plots','training-progress');
-
-options = trainingOptions('adam', ...
-    'GradientDecayFactor', 0.9, ...
-    'SquaredGradientDecayFactor', 0.99, ...
-    'verbose', 1, ...
-    'MiniBatchSize',8, ...
-    'MaxEpochs',300, ...
-    'InitialLearnRate',1e-3, ...
-    'Shuffle','every-epoch', ...
-    'ValidationData',augimdsValidation, ...
-    'ValidationFrequency',5, ...
-    'Verbose',false, ...
-    'Plots','training-progress');
-
-netTransfer3 = trainNetwork(augimdsTrain,layers,options);
 
 %% Custom functions used on script
 
@@ -281,4 +243,6 @@ data = imnoise(data, 'gaussian');
 end
 
 end
+
+% augmentedImageDatastore(inputSize(1:2),imdsHardValidation);
 
