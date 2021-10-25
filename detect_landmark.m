@@ -1,7 +1,7 @@
 function landmark = detect_landmark(img)
 
 if exist('netTransfer', 'var') == 0
-    load('netTransfer.mat','netTransfer');
+    load('netTransfer_Presentation.mat','netTransfer');
 end
 
     YPred = classify(netTransfer,img);

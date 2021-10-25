@@ -106,11 +106,14 @@ augimdsTesting = augmentedImageDatastore(inputSize(1:2),imdsTesting);
 % Training accuracy of model: 92.150171 %
 % Validation accuracy of model: 93.150685 %
 
-% Current
+% Presentation
 % miniBatchSize = 20
-% Training accruacy of model: 97.021277 %
+% Training accruacy of model: 94.042553 %
 % Validation accruacy of model: 87.671233 %
-% Testing accruacy of model: 82.758621 %
+% Testing accruacy of model: 87.931034 %
+
+% Presentation 1 = Other
+% Presentation 2 = Current
 
 % Note: miniBatchSize = 30 performed poorly
 
@@ -150,7 +153,7 @@ netTransfer = trainNetwork(augimdsTrain,lgraph,options);
 %% Save model for CNN
 
 %save('netTransfer_Full_Dataset', 'netTransfer', 'inputSize');
-save('netTransfer_Presentation', 'netTransfer', 'inputSize');
+save('netTransfer', 'netTransfer', 'inputSize');
 %% Load model of CNN
 
 if exist('netTransfer', 'var') == 0
