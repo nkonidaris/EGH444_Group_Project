@@ -157,12 +157,12 @@ save('netTransfer', 'netTransfer', 'inputSize');
 %% Load model of CNN
 
 if exist('netTransfer', 'var') == 0
-    load('netTransfer.mat','netTransfer', 'inputSize');
+    load('netTransfer_Presentation.mat','netTransfer', 'inputSize');
 end
 
-if exist('netTransfer', 'var') == 0
-    load('netTransfer_Best_Yet.mat','netTransfer', 'inputSize');
-end
+% if exist('netTransfer', 'var') == 0
+%     load('netTransfer_Best_Yet.mat','netTransfer', 'inputSize');
+% end
 
 %% Training Accuracy
 
@@ -220,12 +220,12 @@ cmVal.RowSummary = 'row-normalized';
 
 %% Testing Accuracy
 
-% External Testing datastore
-%  imdsTesting = imageDatastore('Testing_Data\', ...
-%      'IncludeSubfolders',true, ...
-%      'LabelSource','foldernames');
+ %External Testing datastore
+  imdsTesting = imageDatastore('Training_Data\Level 3\', ...
+      'IncludeSubfolders',true, ...
+      'LabelSource','foldernames');
 
-%augimdsTesting = augmentedImageDatastore(inputSize(1:2),imdsTesting);
+augimdsTesting = augmentedImageDatastore(inputSize(1:2),imdsTesting);
 
 YPred = classify(netTransfer,augimdsTesting);
 
